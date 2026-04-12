@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Service</title>
+
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lottie Player -->
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --surface: rgba(255, 255, 255, 0.08);
+            --border: rgba(255, 255, 255, 0.15);
+            --text: #f8fafc;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: radial-gradient(circle at top left, #1e1b4b, #0f172a, #020617);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Ambient Glow Behind Card */
+        .glow {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: var(--primary);
+            filter: blur(150px);
+            opacity: 0.3;
+            border-radius: 50%;
+            z-index: 0;
+        }
+
+        /* Glassmorphism Card */
+        .card {
+            background: var(--surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            padding: 40px;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            z-index: 1;
+            position: relative;
+            animation: floatIn 0.6s ease-out;
+        }
+
+        @keyframes floatIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            margin: 0 0 5px 0;
+            font-weight: 600;
+            font-size: 24px;
+            letter-spacing: 0.5px;
+        }
+
+        p.subtitle {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 25px;
+            font-weight: 300;
+        }
+
+        /* Drag & Drop Zone */
+        .drop-zone {
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 16px;
+            padding: 30px 20px;
+            background: rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+            transform: scale(1.02);
+        }
+
+        .drop-zone input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .drop-zone-content {
+            pointer-events: none;
+        }
+
+        .drop-zone svg {
+            width: 50px;
+            height: 50px;
+            fill: #94a3b8;
+            margin-bottom: 15px;
+            transition: fill 0.3s ease;
+        }
+        
+        .drop-zone:hover svg {
+            fill: var(--primary);
+        }
+
+        .file-preview {
+            display: none;
+            color: #10b981;
+            font-weight: 500;
+            font-size: 14px;
+            word-break: break-all;
+            margin-top: 10px;
+        }
+
+        /* Inputs */
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            color: #cbd5e1;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 14px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        select option {
+            background: #0f172a;
+            color: white;
+        }
+
+        input[type="number"]:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            display: none;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--primary);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        /* Button */
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+        }
+
+        button:disabled {
+            background: #475569;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: translateY(0);
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Success Overlay */
+        .success-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s ease;
+            z-index: 10;
+        }
+
+        .success-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .success-overlay h3 {
+            margin-top: 0;
+            font-size: 22px;
+            color: #10b981;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="glow"></div>
+    
+    <div class="card">
+        <!-- Success Overlay (Hidden by default) -->
+        <div class="success-overlay" id="successOverlay">
+            <lottie-player src="https://assets1.lottiefiles.com/packages/lf20_pqnfmone.json" background="transparent" speed="1" style="width: 150px; height: 150px;"></lottie-player>
+            <h3>Upload Successful!</h3>
+            <p style="color: #94a3b8; font-size: 14px;">Your file has been sent to the printer.</p>
+        </div>
+
+        <h2>Print Studio</h2>
+        <p class="subtitle">Quick & secure premium printing</p>
+
+        <!-- Custom Drag & Drop -->
+        <div class="drop-zone" id="dropZone">
+            <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.jpg,.png">
+            <div class="drop-zone-content" id="dropZoneContent">
+                <!-- Upload Icon -->
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 13v4c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2v-4h2v4h10v-4h2zm-7-2.2l3.6 3.6 1.4-1.4L12 5.9 5 13l1.4 1.4L10 10.8V19h2v-8.2z"/>
+                </svg>
+                <div style="font-weight: 500; font-size: 16px;">Drag & drop your file here</div>
+                <div style="font-size: 12px; color: #94a3b8; margin-top: 5px;">or click to browse</div>
+            </div>
+            <div class="file-preview" id="filePreview"></div>
+        </div>
+
+        <div class="input-group">
+            <div class="input-wrapper">
+                <label>Copies</label>
+                <input type="number" id="copiesInput" value="1" min="1">
+            </div>
+            
+            <div class="input-wrapper">
+                <label>Print Type</label>
+                <select id="printType">
+                    <option value="Black & White">Black & White</option>
+                    <option value="Color">Premium Color</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Hidden Progress Bar -->
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <button id="uploadBtn">
+            <span class="spinner" id="spinner"></span>
+            <span id="btnText">Upload & Print</span>
+            <svg id="btnIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+        </button>
+    </div>
+
+    <!-- ✅ FIREBASE INTEGRATION SECTION -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        // NOTE: Swapped uploadBytes for uploadBytesResumable to track progress
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+
+        // Your Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCYnzd9oR7oGBroR06tIddkctZbAEu7Mrc",
+            authDomain: "print-app-60178.firebaseapp.com",
+            projectId: "print-app-60178",
+            storageBucket: "print-app-60178.firebasestorage.app",
+            messagingSenderId: "947731089469",
+            appId: "1:947731089469:web:d65b9200d3fca60de84254"
+        };
+
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app); 
+
+        // ----- UI Interactions -----
+        const dropZone = document.getElementById("dropZone");
+        const fileInput = document.getElementById("fileInput");
+        const filePreview = document.getElementById("filePreview");
+        const dropZoneContent = document.getElementById("dropZoneContent");
+
+        // Drag events
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault(); e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            if (dt.files && dt.files.length > 0) {
+                fileInput.files = dt.files;
+                handleFileSelect();
+            }
+        });
+
+        fileInput.addEventListener('change', handleFileSelect);
+
+        function handleFileSelect() {
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                dropZoneContent.style.display = 'none';
+                filePreview.innerHTML = `✅ Selected:<br><span style='color: white;'>${file.name}</span>`;
+                filePreview.style.display = 'block';
+            }
+        }
+
+        // ----- Upload Logic -----
+        document.getElementById("uploadBtn").addEventListener("click", async () => {
+            const btn = document.getElementById("uploadBtn");
+            const btnText = document.getElementById("btnText");
+            const btnIcon = document.getElementById("btnIcon");
+            const spinner = document.getElementById("spinner");
+            const progressContainer = document.getElementById("progressContainer");
+            const progressBar = document.getElementById("progressBar");
+            const successOverlay = document.getElementById("successOverlay");
+
+            const file = fileInput.files[0];
+            const copies = document.getElementById("copiesInput").value;
+            const printType = document.getElementById("printType").value;
+
+            // Get shop ID from URL if present
+            const urlParams = new URLSearchParams(window.location.search);
+            const shopId = urlParams.get('shop') || "unknown_shop";
+
+            if (!file) {
+                alert("Please select a file first.");
+                return;
+            }
+
+            // UI Loading State
+            btn.disabled = true;
+            btnText.textContent = "Uploading...";
+            btnIcon.style.display = "none";
+            spinner.style.display = "block";
+            progressContainer.style.display = "block";
+            progressBar.style.width = "0%";
+
+            try {
+                // Step 1: Upload with progress
+                const storageRef = ref(storage, "prints/" + file.name);
+                const uploadTask = uploadBytesResumable(storageRef, file);
+
+                uploadTask.on('state_changed', 
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        progressBar.style.width = progress + '%';
+                    }, 
+                    (error) => {
+                        console.error("Storage error:", error);
+                        resetButton();
+                        alert("❌ Upload failed.");
+                    }, 
+                    async () => {
+                        // Get the download URL of the uploaded file
+                        const fileURL = await getDownloadURL(uploadTask.snapshot.ref);
+
+                        // Step 2: Save metadata to Firestore AFTER successful upload
+                        await addDoc(collection(db, "orders"), {
+                            fileName: file.name,
+                            fileURL: fileURL,
+                            copies: copies, // ensure it's a number when saved if needed, but keeping as is
+                            printType: printType,
+                            shopId: shopId,
+                            timestamp: new Date(),
+                            status: "pending"
+                        });
+
+                        // Show Lottie Success Screen
+                        successOverlay.classList.add("show");
+                        
+                        // Play the lottie animation (it autoplays usually, but we ensure it plays)
+                        const player = successOverlay.querySelector('lottie-player');
+                        if (player && typeof player.play === 'function') {
+                            player.play();
+                        }
+
+                        // Reset form after a few seconds
+                        setTimeout(() => {
+                            successOverlay.classList.remove("show");
+                            fileInput.value = "";
+                            document.getElementById("copiesInput").value = 1;
+                            dropZoneContent.style.display = "block";
+                            filePreview.style.display = "none";
+                            resetButton();
+                        }, 3500);
+                    }
+                );
+            } catch (error) {
+                console.error("Firestore error:", error);
+                resetButton();
+                alert("❌ Something went wrong saving the print order.");
+            }
+
+            function resetButton() {
+                btn.disabled = false;
+                btnText.textContent = "Upload & Print";
+                btnIcon.style.display = "block";
+                spinner.style.display = "none";
+                progressContainer.style.display = "none";
+                progressBar.style.width = "0%";
+            }
+        });
+    </script>
+</body>
+
+</html>

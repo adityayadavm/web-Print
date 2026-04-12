@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - Print Orders</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #1e293b;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: white;
+            margin-right: 5px;
+        }
+
+        .btn-download {
+            background-color: #3b82f6;
+        }
+
+        .btn-success {
+            background-color: #10b981;
+        }
+        
+        .btn:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .status-pending {
+            background-color: #fef08a;
+            color: #854d0e;
+        }
+
+        .status-printed {
+            background-color: #bbf7d0;
+            color: #166534;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div>
+                <h2>Print Orders Dashboard</h2>
+                <p style="color: #64748b; margin-top: -10px; margin-bottom: 20px;">
+                    Scan the QR code to open the upload page for this shop.
+                </p>
+            </div>
+            <div style="text-align: center;">
+                <div id="qrcode" style="padding: 10px; background: white; border-radius: 8px; border: 1px solid #e2e8f0; display: inline-block;"></div>
+            </div>
+        </div>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Customer Info</th>
+                    <th>File Name</th>
+                    <th>Copies</th>
+                    <th>Type</th>
+                    <th>Date/Time</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="ordersTableBody">
+                <tr>
+                    <td colspan="7" style="text-align: center;">Loading orders...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- QR Code Script -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <!-- ✅ FIREBASE INTEGRATION SECTION -->
+    <script type="module">
+        // 1. Import Firebase Core
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        
+        // 2. Import Firestore (Database)
+        import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // 3. Import Storage (File handling)
+        import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCYnzd9oR7oGBroR06tIddkctZbAEu7Mrc",
+            authDomain: "print-app-60178.firebaseapp.com",
+            projectId: "print-app-60178",
+            storageBucket: "print-app-60178.firebasestorage.app",
+            messagingSenderId: "947731089469",
+            appId: "1:947731089469:web:d65b9200d3fca60de84254"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        // Generate QR Code for the shop upload URL
+        const shopId = "shop1"; 
+        // Build the URL by replacing admin.html with index.html and passing the shop param
+        const currentPath = window.location.href.split("?")[0];
+        const uploadUrl = currentPath.replace("admin.html", "index.html") + "?shop=" + shopId;
+
+        new QRCode(document.getElementById("qrcode"), {
+            text: uploadUrl,
+            width: 120,
+            height: 120,
+            colorDark : "#0f172a",
+            colorLight : "#ffffff"
+        });
+
+        // Fetch and display orders
+        async function loadOrders() {
+            const tableBody = document.getElementById("ordersTableBody");
+            
+            try {
+                const querySnapshot = await getDocs(collection(db, "orders"));
+                
+                tableBody.innerHTML = ""; // Clear loader
+                
+                if (querySnapshot.empty) {
+                    tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No orders found.</td></tr>';
+                    return;
+                }
+
+                querySnapshot.forEach((documentSnapshot) => {
+                    const data = documentSnapshot.data();
+                    const orderId = documentSnapshot.id;
+                    
+                    // Format fields safely
+                    const customerInfo = (data.customerName || "N/A") + "<br><small>" + (data.phone || "N/A") + "</small>";
+                    const dateObj = data.timestamp ? data.timestamp.toDate() : new Date();
+                    const formattedDate = dateObj.toLocaleString();
+                    const currentStatus = data.status || "pending";
+                    
+                    const statusClass = currentStatus === "printed" ? "status-printed" : "status-pending";
+                    
+                    // Create table row
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>${customerInfo}</td>
+                        <td>${data.fileName || "Unknown"}</td>
+                        <td>${data.copies || 1}</td>
+                        <td>${data.printType || "Unknown"}</td>
+                        <td>${formattedDate}</td>
+                        <td id="statusCell-${orderId}">
+                            <span class="status-badge ${statusClass}">${currentStatus.toUpperCase()}</span>
+                        </td>
+                        <td>
+                            <button class="btn btn-download" onclick="downloadFile('${data.fileURL}')">Download File</button>
+                            ${currentStatus !== "printed" ? `<button id="printBtn-${orderId}" class="btn btn-success" onclick="markPrinted('${orderId}')">Mark as Printed</button>` : ''}
+                        </td>
+                    `;
+                    
+                    tableBody.appendChild(tr);
+                });
+
+            } catch (error) {
+                console.error("Error fetching orders:", error);
+                tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Failed to load orders. Check console.</td></tr>';
+            }
+        }
+
+        // Action: Download File
+        window.downloadFile = (fileURL) => {
+            if (!fileURL || fileURL === "undefined") {
+                alert("File URL is missing! (This order was likely created before the recent update).");
+                return;
+            }
+            
+            // Directly open the saved file URL in a new tab
+            window.open(fileURL, "_blank");
+        };
+
+        // Action: Mark as Printed
+        window.markPrinted = async (orderId) => {
+            try {
+                const orderRef = doc(db, "orders", orderId);
+                
+                // Update Firestore document
+                await updateDoc(orderRef, {
+                    status: "printed"
+                });
+
+                // Update UI visually without reloading
+                const statusCell = document.getElementById(`statusCell-${orderId}`);
+                statusCell.innerHTML = `<span class="status-badge status-printed">PRINTED</span>`;
+                
+                const btn = document.getElementById(`printBtn-${orderId}`);
+                if (btn) btn.remove(); // Hide the button
+
+            } catch (error) {
+                console.error("Error updating status:", error);
+                alert("❌ Could not update status.");
+            }
+        };
+
+        // Load orders when the script runs
+        loadOrders();
+    </script>
+</body>
+
+</html>
