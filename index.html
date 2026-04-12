@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Print Service</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #0f172a;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .box {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+        }
+
+        input,
+        select,
+        button {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+        }
+
+        button {
+            background: blue;
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="box">
+        <h2>Print Service</h2>
+
+        <input type="file" id="fileInput">
+        <input type="number" id="copiesInput" placeholder="Copies">
+
+        <select id="printType">
+            <option value="Black & White">Black & White</option>
+            <option value="Color">Color</option>
+        </select>
+
+        <button id="uploadBtn">Upload & Print</button>
+    </div>
+
+    <!-- ✅ FIREBASE -->
+    <script type="module">
+        // 1. Import Firebase Core
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        
+        // 2. Import Firestore (Database)
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // 3. Import Storage (File Uploads)
+        import { getStorage, ref, uploadBytes } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCYnzd9oR7oGBroR06tIddkctZbAEu7Mrc",
+            authDomain: "print-app-60178.firebaseapp.com",
+            projectId: "print-app-60178",
+            storageBucket: "print-app-60178.firebasestorage.app",
+            messagingSenderId: "947731089469",
+            appId: "1:947731089469:web:d65b9200d3fca60de84254"
+        };
+
+        // Initialize Firebase apps
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        document.getElementById("uploadBtn").addEventListener("click", async () => {
+
+            const btn = document.getElementById("uploadBtn");
+            const file = document.getElementById("fileInput").files[0];
+            const copies = document.getElementById("copiesInput").value;
+            const printType = document.getElementById("printType").value;
+
+            // Get shop ID from URL if present
+            const urlParams = new URLSearchParams(window.location.search);
+            const shopId = urlParams.get('shop') || "unknown_shop";
+
+            if (!file) {
+                alert("Please select a file first.");
+                return;
+            }
+
+            try {
+                // Change button text while uploading
+                btn.textContent = "Uploading...";
+                btn.disabled = true;
+
+                // Step 1: Upload file to Firebase Storage inside 'prints' folder
+                const storageRef = ref(storage, "prints/" + file.name);
+                await uploadBytes(storageRef, file);
+
+                // Step 2: Save the record to Firestore Database in 'orders' collection
+                await addDoc(collection(db, "orders"), {
+                    fileName: file.name,
+                    copies: copies,
+                    printType: printType,
+                    shopId: shopId,
+                    timestamp: new Date()
+                });
+
+                alert("✅ Order saved successfully");
+            } catch (error) {
+                console.error("Error during upload/saving:", error);
+                alert("❌ Something went wrong. Check console.");
+            } finally {
+                // Restore button
+                btn.textContent = "Upload & Print";
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>
