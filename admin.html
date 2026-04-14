@@ -90,6 +90,27 @@
             background-color: #bbf7d0;
             color: #166534;
         }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #10b981;
+            color: white;
+            padding: 14px 24px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+        }
+
+        .toast.show {
+            bottom: 40px;
+        }
     </style>
 </head>
 
@@ -174,6 +195,23 @@
             });
         }
 
+        // Setup real-time notifications
+        let previousOrderCount = 0;
+        const notificationSound = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+
+        function showToast(message) {
+            let toast = document.getElementById("toast");
+            if (!toast) {
+                toast = document.createElement("div");
+                toast.id = "toast";
+                toast.className = "toast";
+                document.body.appendChild(toast);
+            }
+            toast.textContent = message;
+            toast.classList.add("show");
+            setTimeout(() => toast.classList.remove("show"), 4000);
+        }
+
         // Fetch and display orders
         function loadOrders() {
             const tableBody = document.getElementById("ordersTableBody");
@@ -189,6 +227,15 @@
                 
                 // Active streaming data hook
                 onSnapshot(q, (querySnapshot) => {
+                    const currentCount = querySnapshot.size;
+                    
+                    // Notification Logic
+                    if (currentCount > previousOrderCount && previousOrderCount !== 0) {
+                        notificationSound.play().catch(e => console.log("Audio play blocked natively by browser policies natively unless interacted with first."));
+                        showToast("New Order Received! 🔔");
+                    }
+                    previousOrderCount = currentCount;
+
                     tableBody.innerHTML = ""; // Clear loader
                     
                     if (querySnapshot.empty) {
