@@ -137,7 +137,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         
         // 2. Import Firestore (Database)
-        import { getFirestore, collection, getDocs, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         // 3. Import Storage (File handling)
         import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
@@ -175,7 +175,7 @@
         }
 
         // Fetch and display orders
-        async function loadOrders() {
+        function loadOrders() {
             const tableBody = document.getElementById("ordersTableBody");
             
             if (!shopId) {
@@ -186,49 +186,62 @@
             try {
                 // Query only current shop's orders
                 const q = query(collection(db, "orders"), where("shopId", "==", shopId));
-                const querySnapshot = await getDocs(q);
                 
-                tableBody.innerHTML = ""; // Clear loader
-                
-                if (querySnapshot.empty) {
-                    tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No orders yet</td></tr>';
-                    return;
-                }
+                // Active streaming data hook
+                onSnapshot(q, (querySnapshot) => {
+                    tableBody.innerHTML = ""; // Clear loader
+                    
+                    if (querySnapshot.empty) {
+                        tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No orders yet</td></tr>';
+                        return;
+                    }
 
-                querySnapshot.forEach((documentSnapshot) => {
-                    const data = documentSnapshot.data();
-                    const orderId = documentSnapshot.id;
-                    
-                    // Format fields safely
-                    const customerInfo = (data.customerName || "N/A") + "<br><small>" + (data.phone || "N/A") + "</small>";
-                    const dateObj = data.createdAt ? data.createdAt.toDate() : (data.timestamp ? data.timestamp.toDate() : new Date());
-                    const formattedDate = dateObj.toLocaleString();
-                    const currentStatus = data.status ? data.status.toLowerCase() : "pending";
-                    
-                    const statusClass = currentStatus === "printed" ? "status-printed" : "status-pending";
-                    
-                    // Create table row
-                    const tr = document.createElement("tr");
-                    tr.innerHTML = `
-                        <td>${customerInfo}</td>
-                        <td>${data.fileName || "Unknown"}</td>
-                        <td>${data.copies || 1}</td>
-                        <td>${data.printType || "Unknown"}</td>
-                        <td>${formattedDate}</td>
-                        <td id="statusCell-${orderId}">
-                            <span class="status-badge ${statusClass}">${currentStatus.toUpperCase()}</span>
-                        </td>
-                        <td>
-                            <button class="btn btn-download" onclick="downloadFile('${data.fileURL}')">Download File</button>
-                            ${currentStatus !== "printed" ? `<button id="printBtn-${orderId}" class="btn btn-success" onclick="markPrinted('${orderId}')">Mark as Printed</button>` : ''}
-                        </td>
-                    `;
-                    
-                    tableBody.appendChild(tr);
+                    querySnapshot.forEach((documentSnapshot) => {
+                        const data = documentSnapshot.data();
+                        const orderId = documentSnapshot.id;
+                        
+                        // Format fields safely
+                        const customerInfo = (data.customerName || "N/A") + "<br><small>" + (data.phone || "N/A") + "</small>";
+                        
+                        let dateObj;
+                        if (data.timestamp) {
+                            dateObj = (typeof data.timestamp === 'number') ? new Date(data.timestamp) : data.timestamp.toDate();
+                        } else if (data.createdAt) {
+                            dateObj = data.createdAt.toDate();
+                        } else {
+                            dateObj = new Date();
+                        }
+                        const formattedDate = dateObj.toLocaleString();
+                        const currentStatus = data.status ? data.status.toUpperCase() : "PENDING";
+                        
+                        const statusClass = currentStatus === "PRINTED" ? "status-printed" : "status-pending";
+                        
+                        // Create table row
+                        const tr = document.createElement("tr");
+                        tr.innerHTML = `
+                            <td>${customerInfo}</td>
+                            <td>${data.fileName || "Unknown"}</td>
+                            <td>${data.copies || 1}</td>
+                            <td>${data.printType || "Unknown"}</td>
+                            <td>${formattedDate}</td>
+                            <td id="statusCell-${orderId}">
+                                <span class="status-badge ${statusClass}">${currentStatus}</span>
+                            </td>
+                            <td>
+                                <button class="btn btn-download" onclick="downloadFile('${data.fileURL}')">Download File</button>
+                                ${currentStatus !== "PRINTED" ? `<button id="printBtn-${orderId}" class="btn btn-success" onclick="markPrinted('${orderId}')">Mark as Printed</button>` : ''}
+                            </td>
+                        `;
+                        
+                        tableBody.appendChild(tr);
+                    });
+                }, (error) => {
+                    console.error("Snapshot error:", error);
+                    tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Real-time feed disconnected.</td></tr>';
                 });
 
             } catch (error) {
-                console.error("Error fetching orders:", error);
+                console.error("Error setting up feed:", error);
                 tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Failed to load orders. Check console.</td></tr>';
             }
         }
@@ -249,17 +262,10 @@
             try {
                 const orderRef = doc(db, "orders", orderId);
                 
-                // Update Firestore document
+                // Update Firestore document (onSnapshot will handle the UI redraw automatically!)
                 await updateDoc(orderRef, {
-                    status: "printed"
+                    status: "PRINTED"
                 });
-
-                // Update UI visually without reloading
-                const statusCell = document.getElementById(`statusCell-${orderId}`);
-                statusCell.innerHTML = `<span class="status-badge status-printed">PRINTED</span>`;
-                
-                const btn = document.getElementById(`printBtn-${orderId}`);
-                if (btn) btn.remove(); // Hide the button
 
             } catch (error) {
                 console.error("Error updating status:", error);

@@ -351,7 +351,7 @@
     <!-- ✅ FIREBASE INTEGRATION SECTION -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
         // NOTE: Swapped uploadBytes for uploadBytesResumable to track progress
         import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
 
@@ -495,7 +495,7 @@
                             printType: printType,
                             shopId: shopId,
                             status: "PENDING",
-                            createdAt: serverTimestamp()
+                            timestamp: Date.now()
                         });
 
                         // Show Lottie Success Screen
