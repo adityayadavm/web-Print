@@ -1,513 +1,461 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Print Service</title>
-
+    <title>PrintFlow | The Modern Printing Platform</title>
+    
     <!-- Google Fonts: Poppins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Lottie Player -->
-    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
-
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --surface: rgba(255, 255, 255, 0.08);
-            --border: rgba(255, 255, 255, 0.15);
-            --text: #f8fafc;
+            --primary: #4f46e5;
+            --primary-light: #a5b4fc;
+            --dark: #1e293b;
+            --text-gray: #64748b;
+            --bg-light: #f8fafc;
+            --white: #ffffff;
+            --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.08);
+            --shadow-hover: 0 20px 40px -10px rgba(79, 70, 229, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
         }
 
         body {
-            font-family: 'Poppins', sans-serif;
-            background: radial-gradient(circle at top left, #1e1b4b, #0f172a, #020617);
-            color: var(--text);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
-            position: relative;
-            overflow: hidden;
+            background-color: var(--white);
+            color: var(--dark);
+            overflow-x: hidden;
         }
 
-        /* Ambient Glow Behind Card */
-        .glow {
+        /* Utility animations */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.8s ease-out forwards;
+            opacity: 0;
+        }
+
+        .delay-1 { animation-delay: 0.2s; }
+        .delay-2 { animation-delay: 0.4s; }
+        .delay-3 { animation-delay: 0.6s; }
+
+        /* Navbar */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 100;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            animation: fadeInDown 0.6s ease-out forwards;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--dark);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo span {
+            color: var(--primary);
+        }
+
+        .btn-login {
+            background: rgba(79, 70, 229, 0.1);
+            color: var(--primary);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-login:hover {
+            background: rgba(79, 70, 229, 0.15);
+            transform: translateY(-2px);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 160px 5% 100px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1280px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* Abstract background blob */
+        .hero-blob {
             position: absolute;
-            width: 400px;
-            height: 400px;
-            background: var(--primary);
-            filter: blur(150px);
-            opacity: 0.3;
+            top: -100px;
+            right: -100px;
+            width: 600px;
+            height: 600px;
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            filter: blur(100px);
+            opacity: 0.15;
             border-radius: 50%;
             z-index: 0;
         }
 
-        /* Glassmorphism Card */
-        .card {
-            background: var(--surface);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border);
-            padding: 40px;
-            border-radius: 24px;
-            width: 100%;
-            max-width: 450px;
-            text-align: center;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        .hero-content {
+            flex: 1;
+            max-width: 600px;
             z-index: 1;
-            position: relative;
-            animation: floatIn 0.6s ease-out;
         }
 
-        @keyframes floatIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        .hero-title {
+            font-size: clamp(40px, 5vw, 64px);
+            font-weight: 700;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            color: var(--dark);
         }
 
-        h2 {
-            margin: 0 0 5px 0;
+        .text-gradient {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 18px;
+            color: var(--text-gray);
+            line-height: 1.6;
+            margin-bottom: 40px;
+            font-weight: 400;
+            max-width: 480px;
+        }
+
+        .btn-primary {
+            display: inline-block;
+            background: var(--primary);
+            color: var(--white);
+            text-decoration: none;
+            padding: 16px 36px;
+            border-radius: 50px;
             font-weight: 600;
-            font-size: 24px;
-            letter-spacing: 0.5px;
-        }
-
-        p.subtitle {
-            font-size: 14px;
-            color: #94a3b8;
-            margin-bottom: 25px;
-            font-weight: 300;
-        }
-
-        /* Drag & Drop Zone */
-        .drop-zone {
-            border: 2px dashed rgba(255,255,255,0.3);
-            border-radius: 16px;
-            padding: 30px 20px;
-            background: rgba(0,0,0,0.1);
-            cursor: pointer;
+            font-size: 16px;
+            box-shadow: 0 10px 20px -10px var(--primary);
             transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 25px -10px var(--primary);
+            background: var(--primary-hover, #4338ca);
+        }
+
+        .hero-graphic {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1;
+        }
+
+        /* Floating Graphic element */
+        .floating-card {
+            width: 320px;
+            height: 400px;
+            background: var(--white);
+            border-radius: 24px;
+            box-shadow: var(--shadow-soft);
+            display: flex;
+            flex-direction: column;
+            padding: 32px;
             position: relative;
-            margin-bottom: 20px;
-            overflow: hidden;
+            animation: float 6s ease-in-out infinite;
+            border: 1px solid rgba(0,0,0,0.03);
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
         }
 
-        .drop-zone:hover, .drop-zone.dragover {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.1);
-            transform: scale(1.02);
-        }
-
-        .drop-zone input[type="file"] {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .drop-zone-content {
-            pointer-events: none;
-        }
-
-        .drop-zone svg {
-            width: 50px;
-            height: 50px;
-            fill: #94a3b8;
-            margin-bottom: 15px;
-            transition: fill 0.3s ease;
+        .floating-card .qr-mock {
+            width: 150px;
+            height: 150px;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(165, 180, 252, 0.2));
+            margin: auto;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
-        .drop-zone:hover svg {
+        .floating-card .qr-mock svg {
+            width: 80px;
+            height: 80px;
             fill: var(--primary);
         }
 
-        .file-preview {
-            display: none;
-            color: #10b981;
-            font-weight: 500;
-            font-size: 14px;
-            word-break: break-all;
-            margin-top: 10px;
+        .floating-card .bar {
+            height: 16px;
+            border-radius: 8px;
+            background: #e2e8f0;
+            margin-bottom: 12px;
+        }
+        
+        .floating-card .bar:nth-child(2) { width: 80%; }
+        .floating-card .bar:nth-child(3) { width: 60%; background: #f1f5f9;}
+
+        /* Features Section */
+        .features {
+            padding: 100px 5%;
+            background: var(--bg-light);
+            text-align: center;
         }
 
-        /* Inputs */
-        .input-group {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-top: 40px;
         }
 
-        .input-wrapper {
-            flex: 1;
-            text-align: left;
-        }
-
-        label {
-            display: block;
-            font-size: 12px;
-            color: #cbd5e1;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-
-        input[type="number"], select {
-            width: 100%;
-            padding: 14px;
-            background: rgba(0,0,0,0.2);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            color: white;
-            font-family: 'Poppins', sans-serif;
-            font-size: 14px;
-            outline: none;
-            transition: all 0.3s ease;
-            box-sizing: border-box;
-        }
-
-        select option {
-            background: #0f172a;
-            color: white;
-        }
-
-        input[type="number"]:focus, select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
-        }
-
-        /* Progress Bar */
-        .progress-container {
-            width: 100%;
-            height: 6px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 4px;
-            overflow: hidden;
-            margin-bottom: 20px;
-            display: none;
-            position: relative;
-        }
-
-        .progress-bar {
-            height: 100%;
-            width: 0%;
-            background: var(--primary);
-            border-radius: 4px;
-            transition: width 0.3s ease;
-            box-shadow: 0 0 10px var(--primary);
-        }
-
-        /* Button */
-        button {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 16px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            font-family: 'Poppins', sans-serif;
-            width: 100%;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
-        }
-
-        button:hover {
-            background: var(--primary-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
-        }
-
-        button:disabled {
-            background: #475569;
-            box-shadow: none;
-            cursor: not-allowed;
-            transform: translateY(0);
-        }
-
-        /* Loading Spinner */
-        .spinner {
-            display: none;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Success Overlay */
-        .success-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--surface);
-            backdrop-filter: blur(20px);
+        .feature-card {
+            background: var(--white);
+            padding: 40px 30px;
             border-radius: 24px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            text-align: left;
+            box-shadow: var(--shadow-soft);
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            border: 1px solid rgba(0,0,0,0.02);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, transparent, rgba(79, 70, 229, 0.03));
+            z-index: -1;
             opacity: 0;
-            visibility: hidden;
-            transition: all 0.4s ease;
-            z-index: 10;
+            transition: opacity 0.4s ease;
         }
 
-        .success-overlay.show {
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .feature-card:hover::before {
             opacity: 1;
-            visibility: visible;
         }
 
-        .success-overlay h3 {
-            margin-top: 0;
-            font-size: 22px;
-            color: #10b981;
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            background: rgba(79, 70, 229, 0.1);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            color: var(--primary);
+        }
+
+        .feature-icon svg {
+            width: 28px;
+            height: 28px;
+            fill: currentColor;
+        }
+
+        .feature-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--dark);
+        }
+
+        .feature-desc {
+            color: var(--text-gray);
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        footer {
+            padding: 40px 5%;
+            background: var(--white);
+            text-align: center;
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .footer-text {
+            color: var(--text-gray);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 900px) {
+            .hero {
+                flex-direction: column;
+                text-align: center;
+                padding-top: 120px;
+                gap: 50px;
+            }
+            .hero-subtitle {
+                margin: 0 auto 30px;
+            }
         }
     </style>
 </head>
-
 <body>
-    <div class="glow"></div>
-    
-    <div class="card">
-        <!-- Success Overlay (Hidden by default) -->
-        <div class="success-overlay" id="successOverlay">
-            <lottie-player src="https://assets1.lottiefiles.com/packages/lf20_pqnfmone.json" background="transparent" speed="1" style="width: 150px; height: 150px;"></lottie-player>
-            <h3>Upload Successful!</h3>
-            <p style="color: #94a3b8; font-size: 14px;">Your file has been sent to the printer.</p>
-        </div>
 
-        <h2>Print Studio</h2>
-        <p class="subtitle">Quick & secure premium printing</p>
-
-        <!-- Custom Drag & Drop -->
-        <div class="drop-zone" id="dropZone">
-            <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.jpg,.png">
-            <div class="drop-zone-content" id="dropZoneContent">
-                <!-- Upload Icon -->
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M19 13v4c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2v-4h2v4h10v-4h2zm-7-2.2l3.6 3.6 1.4-1.4L12 5.9 5 13l1.4 1.4L10 10.8V19h2v-8.2z"/>
-                </svg>
-                <div style="font-weight: 500; font-size: 16px;">Drag & drop your file here</div>
-                <div style="font-size: 12px; color: #94a3b8; margin-top: 5px;">or click to browse</div>
-            </div>
-            <div class="file-preview" id="filePreview"></div>
-        </div>
-
-        <div class="input-group">
-            <div class="input-wrapper">
-                <label>Copies</label>
-                <input type="number" id="copiesInput" value="1" min="1">
-            </div>
-            
-            <div class="input-wrapper">
-                <label>Print Type</label>
-                <select id="printType">
-                    <option value="Black & White">Black & White</option>
-                    <option value="Color">Premium Color</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- Hidden Progress Bar -->
-        <div class="progress-container" id="progressContainer">
-            <div class="progress-bar" id="progressBar"></div>
-        </div>
-
-        <button id="uploadBtn">
-            <span class="spinner" id="spinner"></span>
-            <span id="btnText">Upload & Print</span>
-            <svg id="btnIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="17 8 12 3 7 8"></polyline>
-                <line x1="12" y1="3" x2="12" y2="15"></line>
+    <!-- Navbar -->
+    <nav>
+        <a href="#" class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary);">
+                <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/>
             </svg>
-        </button>
-    </div>
+            Print<span>Flow</span>
+        </a>
+        <button class="btn-login" onclick="window.location.href='login.html'">Login</button>
+    </nav>
 
-    <!-- ✅ FIREBASE INTEGRATION SECTION -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-        // NOTE: Swapped uploadBytes for uploadBytesResumable to track progress
-        import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-blob"></div>
+        <div class="hero-content fade-in-up">
+            <h1 class="hero-title">
+                Smart Printing with <br/>
+                <span class="text-gradient">QR Code</span>
+            </h1>
+            <p class="hero-subtitle">
+                Upload files from anywhere. Scan the shop's QR code. Print securely and instantly without sharing storage devices.
+            </p>
+            <a href="app.html" class="btn-primary">Try Demo</a>
+        </div>
+        
+        <div class="hero-graphic fade-in-up delay-1">
+            <div class="floating-card">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="qr-mock">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm13-2h-2v2h2v-2zm-2 2h-2v2h2v-2zm2 2h-2v2h2v-2zm-4 0h-2v2h2v-2zm2-6h-2v2h2v-2z"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
 
-        // Your Firebase config
-        const firebaseConfig = {
-            apiKey: "AIzaSyCYnzd9oR7oGBroR06tIddkctZbAEu7Mrc",
-            authDomain: "print-app-60178.firebaseapp.com",
-            projectId: "print-app-60178",
-            storageBucket: "print-app-60178.firebasestorage.app",
-            messagingSenderId: "947731089469",
-            appId: "1:947731089469:web:d65b9200d3fca60de84254"
+    <!-- Features Section -->
+    <section class="features">
+        <div class="features-grid">
+            
+            <!-- Card 1 -->
+            <div class="feature-card fade-in-up delay-1">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 3h6v6H3zM15 3h6v6h-6zM3 15h6v6H3zM15 15h6v6h-6zM5 5v2h2V5H5zm12 0v2h2V5h-2zM5 17v2h2v-2H5zm12 0v2h2v-2h-2zM11 3h2v6h-2zM3 11h6v2H3zM15 11h6v2h-6zM11 15h2v6h-2zM11 11h2v2h-2z"/>
+                    </svg>
+                </div>
+                <h3 class="feature-title">QR Based</h3>
+                <p class="feature-desc">Walk into any partnered print shop, scan their unique QR tag, and instantly connect your device to their printing queue securely.</p>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="feature-card fade-in-up delay-2">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Fast Printing</h3>
+                <p class="feature-desc">Lightning-fast cloud uploads ensure your documents are ready by the time you reach the counter. No waiting, no USB drives.</p>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="feature-card fade-in-up delay-3">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                    </svg>
+                </div>
+                <h3 class="feature-title">Business Ready</h3>
+                <p class="feature-desc">Provides shop owners with a clean dashboard to manage orders, instantly download files, and mark jobs as completed.</p>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p class="footer-text">&copy; PrintFlow | Built by Aditya</p>
+    </footer>
+
+    <script>
+        // Use Intersection Observer for scroll animations (fade in on scroll)
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
         };
 
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.animationPlayState = 'running';
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const storage = getStorage(app); 
-
-        // ----- UI Interactions -----
-        const dropZone = document.getElementById("dropZone");
-        const fileInput = document.getElementById("fileInput");
-        const filePreview = document.getElementById("filePreview");
-        const dropZoneContent = document.getElementById("dropZoneContent");
-
-        // Drag events
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault(); e.stopPropagation();
-        }
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
-        });
-
-        dropZone.addEventListener('drop', (e) => {
-            const dt = e.dataTransfer;
-            if (dt.files && dt.files.length > 0) {
-                fileInput.files = dt.files;
-                handleFileSelect();
-            }
-        });
-
-        fileInput.addEventListener('change', handleFileSelect);
-
-        function handleFileSelect() {
-            if (fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                dropZoneContent.style.display = 'none';
-                filePreview.innerHTML = `✅ Selected:<br><span style='color: white;'>${file.name}</span>`;
-                filePreview.style.display = 'block';
-            }
-        }
-
-        // ----- Upload Logic -----
-        document.getElementById("uploadBtn").addEventListener("click", async () => {
-            const btn = document.getElementById("uploadBtn");
-            const btnText = document.getElementById("btnText");
-            const btnIcon = document.getElementById("btnIcon");
-            const spinner = document.getElementById("spinner");
-            const progressContainer = document.getElementById("progressContainer");
-            const progressBar = document.getElementById("progressBar");
-            const successOverlay = document.getElementById("successOverlay");
-
-            const file = fileInput.files[0];
-            const copies = document.getElementById("copiesInput").value;
-            const printType = document.getElementById("printType").value;
-
-            // Get shop ID from URL if present
-            const urlParams = new URLSearchParams(window.location.search);
-            const shopId = urlParams.get('shop') || "unknown_shop";
-
-            if (!file) {
-                alert("Please select a file first.");
-                return;
-            }
-
-            // UI Loading State
-            btn.disabled = true;
-            btnText.textContent = "Uploading...";
-            btnIcon.style.display = "none";
-            spinner.style.display = "block";
-            progressContainer.style.display = "block";
-            progressBar.style.width = "0%";
-
-            try {
-                // Step 1: Upload with progress
-                const storageRef = ref(storage, "prints/" + file.name);
-                const uploadTask = uploadBytesResumable(storageRef, file);
-
-                uploadTask.on('state_changed', 
-                    (snapshot) => {
-                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                        progressBar.style.width = progress + '%';
-                    }, 
-                    (error) => {
-                        console.error("Storage error:", error);
-                        resetButton();
-                        alert("❌ Upload failed.");
-                    }, 
-                    async () => {
-                        // Get the download URL of the uploaded file
-                        const fileURL = await getDownloadURL(uploadTask.snapshot.ref);
-
-                        // Step 2: Save metadata to Firestore AFTER successful upload
-                        await addDoc(collection(db, "orders"), {
-                            fileName: file.name,
-                            fileURL: fileURL,
-                            copies: copies, // ensure it's a number when saved if needed, but keeping as is
-                            printType: printType,
-                            shopId: shopId,
-                            timestamp: new Date(),
-                            status: "pending"
-                        });
-
-                        // Show Lottie Success Screen
-                        successOverlay.classList.add("show");
-                        
-                        // Play the lottie animation (it autoplays usually, but we ensure it plays)
-                        const player = successOverlay.querySelector('lottie-player');
-                        if (player && typeof player.play === 'function') {
-                            player.play();
-                        }
-
-                        // Reset form after a few seconds
-                        setTimeout(() => {
-                            successOverlay.classList.remove("show");
-                            fileInput.value = "";
-                            document.getElementById("copiesInput").value = 1;
-                            dropZoneContent.style.display = "block";
-                            filePreview.style.display = "none";
-                            resetButton();
-                        }, 3500);
-                    }
-                );
-            } catch (error) {
-                console.error("Firestore error:", error);
-                resetButton();
-                alert("❌ Something went wrong saving the print order.");
-            }
-
-            function resetButton() {
-                btn.disabled = false;
-                btnText.textContent = "Upload & Print";
-                btnIcon.style.display = "block";
-                spinner.style.display = "none";
-                progressContainer.style.display = "none";
-                progressBar.style.width = "0%";
+        document.querySelectorAll('.fade-in-up').forEach((el) => {
+            // Pause animation initially if they are below fold
+            if(el.getBoundingClientRect().top > window.innerHeight) {
+                el.style.animationPlayState = 'paused';
+                observer.observe(el);
+            } else {
+                el.style.opacity = '1';
             }
         });
     </script>
 </body>
-
 </html>

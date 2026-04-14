@@ -137,7 +137,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         
         // 2. Import Firestore (Database)
-        import { getFirestore, collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         // 3. Import Storage (File handling)
         import { getStorage, ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
@@ -157,31 +157,42 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // Generate QR Code for the shop upload URL
-        const shopId = "shop1"; 
-        // Build the URL by replacing admin.html with index.html and passing the shop param
-        const currentPath = window.location.href.split("?")[0];
-        const uploadUrl = currentPath.replace("admin.html", "index.html") + "?shop=" + shopId;
+        // Get Shop ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const shopId = urlParams.get('shop');
 
-        new QRCode(document.getElementById("qrcode"), {
-            text: uploadUrl,
-            width: 120,
-            height: 120,
-            colorDark : "#0f172a",
-            colorLight : "#ffffff"
-        });
+        if (shopId) {
+            // Build the URL by replacing admin.html with app.html and passing the shop param
+            const currentPath = window.location.href.split("?")[0];
+            const uploadUrl = currentPath.replace("admin.html", "app.html") + "?shop=" + shopId;
+
+            new QRCode(document.getElementById("qrcode"), {
+                text: uploadUrl,
+                width: 120,
+                height: 120,
+                colorDark : "#0f172a",
+                colorLight : "#ffffff"
+            });
+        }
 
         // Fetch and display orders
         async function loadOrders() {
             const tableBody = document.getElementById("ordersTableBody");
             
+            if (!shopId) {
+                tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">No Shop ID provided in URL.</td></tr>';
+                return;
+            }
+
             try {
-                const querySnapshot = await getDocs(collection(db, "orders"));
+                // Query only current shop's orders
+                const q = query(collection(db, "orders"), where("shopId", "==", shopId));
+                const querySnapshot = await getDocs(q);
                 
                 tableBody.innerHTML = ""; // Clear loader
                 
                 if (querySnapshot.empty) {
-                    tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No orders found.</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No orders yet</td></tr>';
                     return;
                 }
 
@@ -191,9 +202,9 @@
                     
                     // Format fields safely
                     const customerInfo = (data.customerName || "N/A") + "<br><small>" + (data.phone || "N/A") + "</small>";
-                    const dateObj = data.timestamp ? data.timestamp.toDate() : new Date();
+                    const dateObj = data.createdAt ? data.createdAt.toDate() : (data.timestamp ? data.timestamp.toDate() : new Date());
                     const formattedDate = dateObj.toLocaleString();
-                    const currentStatus = data.status || "pending";
+                    const currentStatus = data.status ? data.status.toLowerCase() : "pending";
                     
                     const statusClass = currentStatus === "printed" ? "status-printed" : "status-pending";
                     
