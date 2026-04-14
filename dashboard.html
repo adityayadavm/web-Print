@@ -425,7 +425,7 @@
 
         async function initShopConfig(user) {
             try {
-                const docRef = db.collection("shops").doc(user.uid);
+                const docRef = db.collection("users").doc(user.uid);
                 const docSnap = await docRef.get();
                 let shopId = null;
 
@@ -448,7 +448,7 @@
                 const qrBox = document.getElementById('qrBox');
                 qrBox.innerHTML = ''; // clear loading spinner
                 
-                const uploadUrl = "https://adityayadavm.github.io/web-Print/?shop=" + shopId;
+                const uploadUrl = `https://adityayadavm.github.io/web-Print/app.html?shop=${shopId}`;
 
                 new QRCode(qrBox, {
                     text: uploadUrl,

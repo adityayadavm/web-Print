@@ -379,13 +379,12 @@
             alert("Invalid QR Code");
             shopNameEl.textContent = "No Shop Selected";
         } else {
-            // Fetch shop email remotely based on param
-            const q = query(collection(db, "shops"), where("shopId", "==", activeShopId));
+            // Fetch shop validation remotely based on param
+            const q = query(collection(db, "users"), where("shopId", "==", activeShopId));
             getDocs(q).then((snapshot) => {
                 if (!snapshot.empty) {
-                    const shopData = snapshot.docs[0].data();
-                    // Display the shop email
-                    shopNameEl.textContent = shopData.email;
+                    // Display the explicit welcome message
+                    shopNameEl.textContent = `Welcome to Shop ${activeShopId}`;
                 } else {
                     alert("Invalid QR Code");
                     shopNameEl.textContent = "Shop not found";

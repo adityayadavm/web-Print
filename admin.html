@@ -162,9 +162,8 @@
         const shopId = urlParams.get('shop');
 
         if (shopId) {
-            // Build the URL by replacing admin.html with app.html and passing the shop param
-            const currentPath = window.location.href.split("?")[0];
-            const uploadUrl = currentPath.replace("admin.html", "app.html") + "?shop=" + shopId;
+            // Force the absolute URL configuration specifically requested
+            const uploadUrl = `https://adityayadavm.github.io/web-Print/app.html?shop=${shopId}`;
 
             new QRCode(document.getElementById("qrcode"), {
                 text: uploadUrl,
